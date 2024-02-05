@@ -16,7 +16,7 @@ List c_add(
            const List &terms1, const NumericVector &coeffs1,
            const List &terms2, const NumericVector &coeffs2
           ){
-    return retval(c_add(prepare(SC,terms1,coeffs1),
+    return retval(sum(prepare(SC,terms1,coeffs1),
                         prepare(SC,terms2,coeffs2)));
 }
 
@@ -26,7 +26,7 @@ List c_prod(
            const List &terms1, const NumericVector &coeffs1,
            const List &terms2, const NumericVector &coeffs2
           ){
-    return retval(c_prod(prepare(SC,terms1,coeffs1),
+    return retval(multiply(prepare(SC,terms1,coeffs1),
                          prepare(SC,terms2,coeffs2)));
 }
 

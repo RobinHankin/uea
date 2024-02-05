@@ -13,8 +13,7 @@ private:
     unsigned int j;
     // constructor:
 public:
-    jacobi(unsigned int i, unsigned int j){
-        if (i >= j){
+    jacobi(unsigned int i, unsigned int j){ if (i >= j){
             throw std::invalid_argument("error: first >= second");
         }
     }
@@ -33,23 +32,57 @@ public:
 // cij is a map from strictly positive integers to reals:
 typedef map <unsigned int, double> cij;
 
+
 // a 'structure' is a map from jacobi objects to cij:
 typedef map <jacobi, cij> structure;  
 
-structure makestructure(const List &SC){
-    structure out;
+structure SC_temp;
+cij o12,o13,o23;
+o12[3] = +1;  // [E,F] =   H
+o13[1] = -2;  // [E,H] = -2E
+o23[2] = +2;  // [F,H] =  2F
 
-    return out;
+SC_temp[jacobi(1,2)] = o12;
+SC_temp[jacobi(1,3)] = o13;
+SC_temp[jacobi(2,3)] = o23;
+
+const SC = SC_temp;
+
+uea remove_zeros(uea &U){
+   for(auto it=U.begin() ; it != C.end() ;){
+        if(it->second == 0){
+            it = U.erase(it); //increments pointer
+        } else {
+            ++it; // increment anyway
+        }
+    }
+    return U;
 }
 
-uea prepare(const List &SC, const List &terms, const NumericVector &coeffs){
-    const structure o = makestructure(SC);
-    // iterate through terms and coeffs: replace e2e1 with e1e2 +
-    // SC[1,2]; then return it.
+uea prepare(const List &terms, const NumericVector &coeffs){
+        
+
+    // iterate through terms and coeffs: replace e2e1 with e1e2 -
+    // [structure constants] do this recursively and return the result
 
     uea out;
+    // First, throw everything together
+    
+    const size_t n=L.size();
+    if(!(n == coeffs.length())){throw std::range_error("in prepare() [file uea/uea.h], L must be the same length as 'coeffs'");}
+    for(size_t i=0 ; i<n ; i++){
+        if(d[i] != 0){
+            Rcpp::IntegerVector term = as<Rcpp::IntegerVector> (L[i]);
+            out[term] += coeffs[i];
+        }  // i loop closes
+    }
+    return remove_zeros(out);
+}
+    
 
     // processing...
+
+
 
     return out;
 }
@@ -72,7 +105,7 @@ uea multiply(const uea x1, const uea x2){
     return out;
 }
 
-List terms(const clifford &X){  // takes a ueaobject, returns a list
+List terms(const clifford &X){  // takes a uea object, returns a list
                                 // of terms; used in retval()
     List out;
 
@@ -95,7 +128,7 @@ NumericVector coeffs(const uea &X){  // takes a uea object, returns the coeffs
 
 
 List retval(const uea &X){  // used to return a list to R
-        return List::create(Named("terms" ) =  Rterms(C),
-                            Named("coeffs") =  coeffs(C)
+        return List::create(Named("terms" ) = Rterms(C),
+                            Named("coeffs") = coeffs(C)
                             );
 }
