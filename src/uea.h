@@ -13,19 +13,15 @@ private:
     unsigned int j;
     // constructor:
 public:
-    jacobi(unsigned int i, unsigned int j){ if (i >= j){
+    jacobi(unsigned int i, unsigned int j){
+        if (i >= j){
             throw std::invalid_argument("error: first >= second");
         }
     }
 
     // Getter methods to access the values
-    unsigned int geti() const {
-        return i;
-    }
-
-    unsigned int getj() const {
-        return j;
-    }
+    unsigned int geti() const { return i; }
+    unsigned int getj() const { return j; }
 };
 
 
@@ -36,7 +32,40 @@ typedef map <unsigned int, double> cij;
 // a 'structure' is a map from jacobi objects to cij:
 typedef map <jacobi, cij> structure;  
 
-structure SC_temp;
+typedef map<Rcpp::IntegerVector, double> uea;
+
+
+
+/*
+
+  If, for example,
+
+  [x_1,x_2] = 9x_6
+  [x_3,x_5] = 3x_1 -7x_5
+
+  we would have
+
+  o12[6] = +9;
+  o35[1] = +3;
+  o35[5] = -7;
+
+
+  then
+
+  SC[jacobi(1,2)] = o12;
+  SC[jacobi(3,5)] = o35;
+
+  or (probably better):
+
+  const structure SC = {{jacobi(1,2),o12},{jacobi(3,4),o34}};
+  
+
+ */
+
+// E -> 1 ; F -> 2 ; H -> 3
+
+
+structure SC_temp;   // "SC" == "structure constants"
 cij o12,o13,o23;
 o12[3] = +1;  // [E,F] =   H
 o13[1] = -2;  // [E,H] = -2E
@@ -59,32 +88,37 @@ uea remove_zeros(uea &U){
     return U;
 }
 
+uea throw(const List &terms, const NumericVector &coeffs){  // throw the terms together
+    const size_t n=L.size();
+    if(!(n == coeffs.length())){
+        throw std::range_error("in prepare(), L must be the same length as 'coeffs'");
+    }
+    for(size_t i=0 ; i<n ; i++){
+        if(coeffs[i] != 0){
+            const Rcpp::IntegerVector term = as<Rcpp::IntegerVector> (L[i]);
+            out[term] += coeffs[i];
+        }
+    }
+}
+
 uea prepare(const List &terms, const NumericVector &coeffs){
-        
 
     // iterate through terms and coeffs: replace e2e1 with e1e2 -
     // [structure constants] do this recursively and return the result
 
-    uea out;
+
     // First, throw everything together
-    
-    const size_t n=L.size();
-    if(!(n == coeffs.length())){throw std::range_error("in prepare() [file uea/uea.h], L must be the same length as 'coeffs'");}
-    for(size_t i=0 ; i<n ; i++){
-        if(d[i] != 0){
-            Rcpp::IntegerVector term = as<Rcpp::IntegerVector> (L[i]);
-            out[term] += coeffs[i];
-        }  // i loop closes
-    }
+    uea out = throw(terms, coeffs);
     return remove_zeros(out);
 }
-    
-
-    // processing...
 
 
+bool is_anything_increasing(const uea &x){
+    if(x.size() > 1){throw std::invalid_argument("size should be 1"); }
+        auto iu = U.begin(); 
+        Rcpp::IntegerVector term = iu->second;
+        const unsigned int n = term.length();
 
-    return out;
 }
 
 
